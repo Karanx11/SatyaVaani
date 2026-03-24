@@ -21,6 +21,7 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<NewsModel>>(
+      key: ValueKey(widget.region),
       future: _service.fetchNews(widget.region),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -52,9 +53,11 @@ class _NewsScreenState extends State<NewsScreen> {
             });
           },
           itemBuilder: (context, index) {
-            return VideoCard(
-              news: newsList[index],
-              isActive: index == currentIndex,
+            final news = newsList[index];
+
+            return Container(
+              key: ValueKey(news.videoUrl + index.toString()), // 🔥 STRONG KEY
+              child: VideoCard(news: news, isActive: index == currentIndex),
             );
           },
         );

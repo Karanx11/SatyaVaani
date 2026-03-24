@@ -14,20 +14,25 @@ class VideoCard extends StatefulWidget {
   State<VideoCard> createState() => _VideoCardState();
 }
 
-class _VideoCardState extends State<VideoCard>
-    with AutomaticKeepAliveClientMixin {
+class _VideoCardState extends State<VideoCard> {
   late YoutubePlayerController controller;
 
   @override
-  bool get wantKeepAlive => true;
-  @override
   void initState() {
     super.initState();
+    _initController();
+  }
 
-    String videoId = YoutubePlayer.convertUrlToId(widget.news.videoUrl) ?? "";
+  // 🔥 Separate function for clean reuse
+  void _initController() {
+    final videoId = YoutubePlayer.convertUrlToId(widget.news.videoUrl);
+
+    if (videoId == null || videoId.isEmpty) {
+      print("❌ Invalid URL: ${widget.news.videoUrl}");
+    }
 
     controller = YoutubePlayerController(
-      initialVideoId: videoId,
+      initialVideoId: videoId ?? "",
       flags: const YoutubePlayerFlags(
         autoPlay: true,
         mute: false,
@@ -38,14 +43,29 @@ class _VideoCardState extends State<VideoCard>
   }
 
   @override
+  @override
   void didUpdateWidget(covariant VideoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.news.videoUrl != widget.news.videoUrl) {
+      controller.pause();
+      controller.dispose();
+
+      final videoId = YoutubePlayer.convertUrlToId(widget.news.videoUrl) ?? "";
+
+      controller = YoutubePlayerController(
+        initialVideoId: videoId,
+        flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
+      );
+
+      setState(() {}); // 🔥 FORCE UI UPDATE
+    }
 
     if (widget.isActive) {
       controller.play();
     } else {
       controller.pause();
-      TTSService.stop();
+      controller.mute();
     }
   }
 
@@ -65,11 +85,23 @@ class _VideoCardState extends State<VideoCard>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        /// 🎥 YOUTUBE VIDEO
-        SizedBox.expand(
-          child: YoutubePlayer(
-            controller: controller,
-            showVideoProgressIndicator: true,
+        /// 🎥 VIDEO WITH TAP CONTROL
+        GestureDetector(
+          onTap: () {
+            if (controller.value.isPlaying) {
+              controller.pause();
+              controller.mute();
+            } else {
+              controller.unMute();
+              controller.play();
+            }
+          },
+          child: SizedBox.expand(
+            child: YoutubePlayer(
+              key: ValueKey(widget.news.videoUrl), // 🔥 IMPORTANT
+              controller: controller,
+              showVideoProgressIndicator: true,
+            ),
           ),
         ),
 
@@ -82,6 +114,7 @@ class _VideoCardState extends State<VideoCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                /// VERIFIED + SOURCE
                 Row(
                   children: [
                     Icon(
@@ -97,6 +130,7 @@ class _VideoCardState extends State<VideoCard>
 
                 const SizedBox(height: 10),
 
+                /// HEADLINE
                 Text(
                   widget.news.headline,
                   style: const TextStyle(
@@ -107,10 +141,12 @@ class _VideoCardState extends State<VideoCard>
 
                 const SizedBox(height: 8),
 
+                /// CAPTION
                 Text(widget.news.caption),
 
                 const SizedBox(height: 12),
 
+                /// ACTION
                 Row(
                   children: [
                     ElevatedButton.icon(

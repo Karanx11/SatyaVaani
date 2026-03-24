@@ -58,7 +58,7 @@ async function fetchVideos() {
             channelId: channel.id,
             part: "snippet",
             order: "date",
-            maxResults: 5,
+            maxResults: 10, // 🔥 more videos
           },
         }
       );
@@ -70,14 +70,14 @@ async function fetchVideos() {
 
         const videoUrl = `https://www.youtube.com/watch?v=${vid.id.videoId}`;
 
-        // ❌ Skip duplicates
+        // 🔥 Skip duplicates
         const exists = await isDuplicate(videoUrl);
         if (exists) {
-          console.log("Duplicate skipped");
+          console.log("⚠️ Duplicate skipped");
           continue;
         }
 
-        await supabase.from("news").insert({
+        const { error } = await supabase.from("news").insert({
           headline: vid.snippet.title,
           video_url: videoUrl,
           source: vid.snippet.channelTitle,
@@ -85,16 +85,20 @@ async function fetchVideos() {
           is_verified: true,
           region: channel.region,
           category: "national",
+          created_at: new Date(), // 🔥 important for sorting
         });
 
-        console.log("Inserted:", vid.snippet.title);
+        if (error) {
+          console.error("Insert error:", error.message);
+        } else {
+          console.log("✅ Inserted:", vid.snippet.title);
+        }
       }
     }
 
-    console.log("✅ Fetch complete");
+    console.log("🚀 Fetch complete");
   } catch (err) {
     console.error("❌ Error:", err.message);
   }
 }
-
 fetchVideos();
