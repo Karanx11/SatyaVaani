@@ -1,31 +1,28 @@
 class NewsModel {
-  final String videoUrl;
-  final String headline;
+  final String title;
+  final String description;
+  final String image;
   final String source;
-  final String caption;
-  final bool isVerified;
-  final String region;
-  final String category;
+  final String publishedAt;
+  final String url;
 
   NewsModel({
-    required this.videoUrl,
-    required this.headline,
+    required this.title,
+    required this.description,
+    required this.image,
     required this.source,
-    required this.caption,
-    required this.isVerified,
-    required this.region,
-    required this.category,
+    required this.publishedAt,
+    required this.url,
   });
 
-  factory NewsModel.fromMap(Map<String, dynamic> data) {
+  factory NewsModel.fromJson(Map<String, dynamic> json) {
     return NewsModel(
-      videoUrl: data['video_url'] ?? '', // ✅ FIXED
-      headline: data['headline'] ?? '',
-      source: data['source'] ?? '',
-      caption: data['caption'] ?? '',
-      isVerified: data['is_verified'] ?? false, // ✅ FIXED
-      region: data['region'] ?? 'india',
-      category: data['category'] ?? 'national',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      image: json['image'] ?? '',
+      source: json['source']['name'] ?? '',
+      publishedAt: json['publishedAt'] ?? '',
+      url: json['url'] ?? '',
     );
   }
 }
